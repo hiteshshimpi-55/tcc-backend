@@ -27,15 +27,10 @@ Production-grade FastAPI starter for building agentic AI systems with LangGraph,
 ### Setup
 
 ```bash
-# Install dependencies (uses Python version from .python-version)
+# One command: Python, deps, git hooks, and .env scaffold
 make setup
 
-# Or step by step:
-uv sync --all-extras
-make install-hooks
-
-# Configure environment
-cp .env.example .env
+# Configure environment (setup creates .env from .env.example if missing)
 # Edit .env with your OPENAI_API_KEY and other settings
 
 # Start PostgreSQL

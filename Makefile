@@ -1,15 +1,25 @@
-.PHONY: install install-hooks lint format check test test-cov pre-commit run docker-up docker-down clean setup reset-env
+.PHONY: install install-hooks lint format check test test-cov pre-commit run docker-up docker-down clean setup setup-env reset-env
 
 install:
+	uv python install
 	uv sync --all-extras
 
-# One-time dev setup: sync deps, pin Python from .python-version, install git hooks.
-setup: install install-hooks
+# One-time dev setup: Python, deps, git hooks, and .env scaffold.
+setup: install install-hooks setup-env
+	@echo ""
+	@echo "Setup complete."
+	@echo "  1. Edit .env with your keys (if you have not already)"
+	@echo "  2. Start Postgres: make docker-up"
+	@echo "  3. Run API:        make run"
+
+setup-env:
+	@if [ ! -f .env ]; then cp .env.example .env && echo "Created .env from .env.example"; fi
 
 # Recreate the virtualenv when scripts break after moving the repo (stale shebang paths).
 reset-env:
 	rm -rf .venv
-	uv sync --all-extras
+	$(MAKE) install
+	$(MAKE) install-hooks
 
 install-hooks:
 	uv run pre-commit uninstall --hook-type commit-msg 2>/dev/null || true
