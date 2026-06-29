@@ -12,6 +12,7 @@ reset-env:
 	uv sync --all-extras
 
 install-hooks:
+	uv run pre-commit uninstall --hook-type commit-msg 2>/dev/null || true
 	uv run pre-commit install --install-hooks
 	uv run pre-commit install --hook-type pre-push --install-hooks
 
