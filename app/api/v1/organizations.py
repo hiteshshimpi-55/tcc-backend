@@ -51,7 +51,12 @@ async def create_organization(
     user: Annotated[Any, Depends(_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict[str, Any]:
-    org = user_service.create_organization(db, user, body.name)
+    org = user_service.create_organization(
+        db,
+        user,
+        body.name,
+        body,
+    )
     request_id = getattr(request.state, "request_id", "unknown")
     return success_response(
         OrganizationResponse.model_validate(org).model_dump(mode="json"),
@@ -97,7 +102,7 @@ async def update_organization(
     user: Annotated[Any, Depends(_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict[str, Any]:
-    org = user_service.update_organization(db, user, organization_id, body.name)
+    org = user_service.update_organization(db, user, organization_id, body.name, body)
     request_id = getattr(request.state, "request_id", "unknown")
     return success_response(
         OrganizationResponse.model_validate(org).model_dump(mode="json"),

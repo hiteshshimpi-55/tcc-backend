@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.db.models.enums import StartupRole
 from app.db.models.organization import OrganizationRole
 
 
@@ -21,6 +22,10 @@ class UserResponse(BaseModel):
     full_name: str | None
     avatar_url: str | None
     active_organization_id: uuid.UUID | None
+    role_title: str | None
+    bio: str | None
+    startup_role: StartupRole | None
+    profile_completed: bool
     onboarding_completed: bool
     organizations: list[OrganizationSummary] = Field(default_factory=list)
 
@@ -31,22 +36,39 @@ class MeResponse(BaseModel):
     user: UserResponse
 
 
+class UpdateMeRequest(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=200)
+    bio: str | None = Field(default=None, max_length=5000)
+    startup_role: StartupRole | None = None
+
+
 class SetActiveOrganizationRequest(BaseModel):
     organization_id: uuid.UUID
 
 
-class CreateOrganizationRequest(BaseModel):
+class OrganizationProfileFields(BaseModel):
+    category: str | None = Field(default=None, max_length=200)
+    description: str | None = Field(default=None, max_length=5000)
+    target_audience: str | None = Field(default=None, max_length=2000)
+    major_platforms: list[str] = Field(default_factory=list)
+
+
+class CreateOrganizationRequest(OrganizationProfileFields):
     name: str = Field(min_length=1, max_length=200)
 
 
-class UpdateOrganizationRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=200)
+class UpdateOrganizationRequest(OrganizationProfileFields):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class OrganizationResponse(BaseModel):
     id: uuid.UUID
     name: str
     owner_id: uuid.UUID
+    category: str | None
+    description: str | None
+    target_audience: str | None
+    major_platforms: list[str]
     created_at: datetime
     updated_at: datetime
 

@@ -12,6 +12,7 @@ from app.db.models import (  # noqa: F401
     OrganizationInvite,
     OrganizationMember,
     User,
+    UserVoiceProfile,
 )
 
 config = context.config

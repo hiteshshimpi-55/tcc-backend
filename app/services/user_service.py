@@ -7,10 +7,17 @@ from sqlalchemy.orm import Session
 
 from app.api.auth_jwt import SupabaseTokenClaims
 from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
+from app.db.models.enums import StartupRole, startup_role_label
 from app.db.models.invite import OrganizationInvite
 from app.db.models.organization import Organization, OrganizationMember, OrganizationRole
 from app.db.models.user import User
-from app.schemas.user import OrganizationMemberResponse, OrganizationSummary, UserResponse
+from app.schemas.user import (
+    OrganizationMemberResponse,
+    OrganizationProfileFields,
+    OrganizationSummary,
+    UpdateMeRequest,
+    UserResponse,
+)
 
 
 def sync_user(db: Session, claims: SupabaseTokenClaims) -> User:
@@ -51,9 +58,42 @@ def build_user_response(db: Session, user: User) -> UserResponse:
         full_name=user.full_name,
         avatar_url=user.avatar_url,
         active_organization_id=user.active_organization_id,
+        role_title=user.role_title,
+        bio=user.bio,
+        startup_role=user.startup_role,
+        profile_completed=user.profile_completed,
         onboarding_completed=user.onboarding_completed,
         organizations=orgs,
     )
+
+
+def _apply_org_profile(org: Organization, profile: OrganizationProfileFields) -> None:
+    if profile.category is not None:
+        org.category = profile.category.strip() or None
+    if profile.description is not None:
+        org.description = profile.description.strip() or None
+    if profile.target_audience is not None:
+        org.target_audience = profile.target_audience.strip() or None
+    org.major_platforms = list(profile.major_platforms)
+
+
+def _profile_is_complete(user: User) -> bool:
+    return bool(user.full_name and user.startup_role)
+
+
+def update_me(db: Session, user: User, body: UpdateMeRequest) -> User:
+    if body.full_name is not None:
+        user.full_name = body.full_name.strip()
+    if body.bio is not None:
+        user.bio = body.bio.strip() or None
+    if body.startup_role is not None:
+        user.startup_role = StartupRole(body.startup_role)
+        user.role_title = startup_role_label(user.startup_role)
+
+    user.profile_completed = _profile_is_complete(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def get_membership(
@@ -85,8 +125,15 @@ def require_admin(
     return membership
 
 
-def create_organization(db: Session, user: User, name: str) -> Organization:
+def create_organization(
+    db: Session,
+    user: User,
+    name: str,
+    profile: OrganizationProfileFields | None = None,
+) -> Organization:
     org = Organization(name=name.strip(), owner_id=user.id)
+    if profile is not None:
+        _apply_org_profile(org, profile)
     db.add(org)
     db.flush()
     db.add(
@@ -115,13 +162,20 @@ def get_organization(db: Session, user: User, organization_id: uuid.UUID) -> Org
 
 
 def update_organization(
-    db: Session, user: User, organization_id: uuid.UUID, name: str
+    db: Session,
+    user: User,
+    organization_id: uuid.UUID,
+    name: str | None = None,
+    profile: OrganizationProfileFields | None = None,
 ) -> Organization:
     require_admin(db, user.id, organization_id)
     org = db.get(Organization, organization_id)
     if org is None:
         raise NotFoundError("Organization not found")
-    org.name = name.strip()
+    if name is not None:
+        org.name = name.strip()
+    if profile is not None:
+        _apply_org_profile(org, profile)
     db.commit()
     db.refresh(org)
     return org
