@@ -27,10 +27,11 @@ Production-grade FastAPI starter for building agentic AI systems with LangGraph,
 ### Setup
 
 ```bash
-# Install dependencies
-uv sync --all-extras
+# Install dependencies (uses Python version from .python-version)
+make setup
 
-# Install git hooks (runs Ruff + hygiene checks on commit, pytest on push)
+# Or step by step:
+uv sync --all-extras
 make install-hooks
 
 # Configure environment
@@ -126,8 +127,9 @@ LANGCHAIN_PROJECT=tcc-backend
 Hooks run automatically on `git commit` (lint/format/hygiene) and `git push` (pytest).
 
 ```bash
-make install-hooks   # one-time setup
+make install-hooks   # one-time setup (commit + push hooks)
 make pre-commit      # run all hooks manually
+make reset-env       # recreate .venv if uv run/pytest/pre-commit fail after moving the repo
 make lint            # ruff check only
 make format          # ruff format + auto-fix
 make check           # lint + format check + pytest

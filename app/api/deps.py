@@ -2,6 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, Header, Request
 
+from app.api.auth import get_token_claims
+from app.api.auth_jwt import SupabaseTokenClaims
 from app.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
 from app.services.agent_service import AgentService
@@ -21,3 +23,9 @@ async def verify_api_key(
 ) -> None:
     if settings.api_key and x_api_key != settings.api_key:
         raise UnauthorizedError("Invalid or missing API key")
+
+
+async def require_jwt(
+    claims: Annotated[SupabaseTokenClaims, Depends(get_token_claims)],
+) -> SupabaseTokenClaims:
+    return claims

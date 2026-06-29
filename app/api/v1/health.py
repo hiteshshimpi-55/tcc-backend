@@ -1,11 +1,10 @@
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any
 
 import psycopg
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from app.api.deps import get_app_settings
 from app.config import Settings
 from app.schemas.base import Meta, error_response, success_response
 
@@ -19,10 +18,8 @@ async def liveness(request: Request) -> dict[str, Any]:
 
 
 @router.get("/ready")
-async def readiness(
-    request: Request,
-    settings: Annotated[Settings, Depends(get_app_settings)],
-) -> JSONResponse:
+async def readiness(request: Request) -> JSONResponse:
+    settings: Settings = request.app.state.settings
     request_id = getattr(request.state, "request_id", "unknown")
     try:
         async with await psycopg.AsyncConnection.connect(settings.database_url) as conn:

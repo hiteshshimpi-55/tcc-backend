@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.agents.checkpointer import close_checkpointer, init_checkpointer
 from app.agents.graph import build_graph
 from app.config import Settings
+from app.db.session import run_migrations
 from app.logging import setup_logging
 from app.services.agent_service import AgentService
 
@@ -24,6 +25,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app_env=settings.app_env,
         langsmith_enabled=settings.langsmith_enabled,
     )
+
+    run_migrations()
+    logger.info("database_migrations_applied")
 
     checkpointer_context = await init_checkpointer(settings.database_url)
     checkpointer, cm = checkpointer_context

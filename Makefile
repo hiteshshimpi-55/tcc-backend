@@ -1,11 +1,19 @@
-.PHONY: install install-hooks lint format check test test-cov pre-commit run docker-up docker-down clean
+.PHONY: install install-hooks lint format check test test-cov pre-commit run docker-up docker-down clean setup reset-env
 
 install:
 	uv sync --all-extras
 
+# One-time dev setup: sync deps, pin Python from .python-version, install git hooks.
+setup: install install-hooks
+
+# Recreate the virtualenv when scripts break after moving the repo (stale shebang paths).
+reset-env:
+	rm -rf .venv
+	uv sync --all-extras
+
 install-hooks:
-	uv run pre-commit install
-	uv run pre-commit install --hook-type pre-push
+	uv run pre-commit install --install-hooks
+	uv run pre-commit install --hook-type pre-push --install-hooks
 
 lint:
 	uv run ruff check app tests
@@ -28,7 +36,7 @@ pre-commit:
 	uv run pre-commit run --all-files
 
 run:
-	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	uv run python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 docker-up:
 	docker compose up -d postgres

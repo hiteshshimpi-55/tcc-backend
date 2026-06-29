@@ -27,10 +27,21 @@ async def test_agent_invoke_success(client):
 
 
 @pytest.mark.asyncio
-async def test_agent_multi_turn_persistence(test_settings):
+async def test_agent_multi_turn_persistence(test_settings, fake_llm):
+    from app.api.auth_jwt import SupabaseTokenClaims
+    from app.api.deps import require_jwt
+
     multi_llm = FakeChatModel(
         responses=["First response", "Second response with context"],
     )
+
+    async def override_require_jwt() -> SupabaseTokenClaims:
+        return SupabaseTokenClaims(
+            supabase_id=__import__("uuid").uuid4(),
+            email="test@example.com",
+            full_name="Test User",
+            avatar_url=None,
+        )
 
     @asynccontextmanager
     async def lifespan(app) -> AsyncIterator[None]:
@@ -42,6 +53,7 @@ async def test_agent_multi_turn_persistence(test_settings):
         yield
 
     app = create_app(test_settings, lifespan_override=lifespan)
+    app.dependency_overrides[require_jwt] = override_require_jwt
 
     async with app.router.lifespan_context(app):
         async with httpx.AsyncClient(
@@ -57,5 +69,7 @@ async def test_agent_multi_turn_persistence(test_settings):
                 json={"thread_id": "persist-thread", "message": "Follow up"},
             )
 
+    assert r1.status_code == 200
+    assert r2.status_code == 200
     assert r1.json()["data"]["message"] == "First response"
     assert r2.json()["data"]["message"] == "Second response with context"

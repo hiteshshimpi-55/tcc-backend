@@ -5,12 +5,12 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from app.api.deps import get_agent_service, verify_api_key
+from app.api.deps import get_agent_service, require_jwt
 from app.schemas.agent import AgentInvokeRequest
 from app.schemas.base import success_response
 from app.services.agent_service import AgentService
 
-router = APIRouter(dependencies=[Depends(verify_api_key)])
+router = APIRouter(dependencies=[Depends(require_jwt)])
 
 
 @router.post("/invoke")

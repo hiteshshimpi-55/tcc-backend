@@ -40,6 +40,28 @@ class Settings(BaseSettings):
 
     # Security
     api_key: str = Field(default="", alias="API_KEY")
+    supabase_jwt_secret: str = Field(default="", alias="SUPABASE_JWT_SECRET")
+    supabase_url: str = Field(default="", alias="SUPABASE_URL")
+
+    @property
+    def supabase_jwks_url(self) -> str | None:
+        if not self.supabase_url:
+            return None
+        return f"{self.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+
+    @property
+    def supabase_jwt_issuer(self) -> str | None:
+        if not self.supabase_url:
+            return None
+        return f"{self.supabase_url.rstrip('/')}/auth/v1"
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        """SQLAlchemy URL using psycopg v3 (project default driver)."""
+        url = self.database_url
+        if url.startswith("postgresql://") and "+" not in url.split("://", 1)[0]:
+            return url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return url
 
     @property
     def is_production(self) -> bool:

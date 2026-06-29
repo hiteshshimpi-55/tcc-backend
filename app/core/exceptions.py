@@ -27,6 +27,11 @@ class ValidationError(AppException):
         super().__init__(message, code="VALIDATION_ERROR", status_code=400, **kwargs)
 
 
+class ForbiddenError(AppException):
+    def __init__(self, message: str = "Forbidden", **kwargs: Any) -> None:
+        super().__init__(message, code="FORBIDDEN", status_code=403, **kwargs)
+
+
 class UnauthorizedError(AppException):
     def __init__(self, message: str = "Unauthorized", **kwargs: Any) -> None:
         super().__init__(message, code="UNAUTHORIZED", status_code=401, **kwargs)
